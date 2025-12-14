@@ -81,3 +81,56 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+/* Tüm sayfanın yazıcıda serbestçe akmasını sağla */
+@media print {
+  html, body, #__next {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  /* Layout/liste kaplarında kalan taşmaları da serbest bırak */
+  .report-page, .report-main, .report-column-left, .report-column-right {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  /* Navigasyon/aksiyonları gizle */
+  .no-print { display: none !important; }
+  /* Gerekirse manuel sayfa kırımı için */
+  .page-break { break-after: page; page-break-after: always; }
+}
+@page { size: A4; margin: 12mm; }
+
+
+.discover-pulse {
+  animation: discoverPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes discoverPulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.28);
+  }
+}

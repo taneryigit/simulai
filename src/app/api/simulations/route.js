@@ -3,7 +3,6 @@ import { getPool } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 export async function GET(req) {
-  
   try {
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get("courseId");
@@ -28,7 +27,7 @@ export async function GET(req) {
 
     // ✅ Get simulation table names from the `courses` table
     const courseQuery = `
-      SELECT simulasyon_table_name_1, simulasyon_table_name_2, simulasyon_table_name_3, simulasyon_table_name_4, 
+      SELECT simulasyon_table_name_1, simulasyon_table_name_2, simulasyon_table_name_3, simulasyon_table_name_4,
              simulasyon_table_name_5, simulasyon_table_name_6, simulasyon_table_name_7, simulasyon_table_name_8,
              simulasyon_table_name_9, simulasyon_table_name_10
       FROM courses WHERE course_id = @courseId
@@ -39,22 +38,32 @@ export async function GET(req) {
       return new Response(JSON.stringify({ error: "Course not found" }), { status: 404 });
     }
 
-    const simulationTables = Object.values(courseResult.recordset[0]).filter(Boolean);
+    const simulationTableNames = Object.values(courseResult.recordset[0]).filter(Boolean);
 
-    // ✅ Fetch simulations from each table dynamically
-    let simulations = [];
-    for (let tableName of simulationTables) {
-      const simulationQuery = `
-        SELECT simulasyon_name, simulasyon_showname, images_folder, detail
-        FROM ${tableName}
-      `;
-      const simResult = await pool.request().query(simulationQuery);
-      simulations = [...simulations, ...simResult.recordset];
+    if (simulationTableNames.length === 0) {
+      return new Response(JSON.stringify({ simulations: [] }), { status: 200 });
     }
 
-    return new Response(JSON.stringify({ simulations }), { status: 200 });
-  } catch  {
- 
+    // ✅ Query centralized simulations table using the table names
+    const placeholders = simulationTableNames.map((_, index) => `@tableName${index}`).join(', ');
+    const simulationQuery = `
+      SELECT satir_id, simulasyon_name, assistant_id, images_folder, detail, 
+             simulasyon_showname, instructions, simulation_type, voice_code
+      FROM [dbo].[simulations]
+      WHERE simulasyon_name IN (${placeholders})
+      ORDER BY satir_id
+    `;
+
+    const request = pool.request();
+    simulationTableNames.forEach((tableName, index) => {
+      request.input(`tableName${index}`, tableName);
+    });
+
+    const simulationResult = await request.query(simulationQuery);
+
+    return new Response(JSON.stringify({ simulations: simulationResult.recordset }), { status: 200 });
+  } catch (error) {
+    console.error("Error fetching simulations:", error);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
   }
 }

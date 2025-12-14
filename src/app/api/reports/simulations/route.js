@@ -1,3 +1,4 @@
+// src/app/api/reports/simulations/route.js
 "use server";
 
 import { getPool } from "@/lib/db";
@@ -39,7 +40,7 @@ export async function GET(req) {
             throw new Error("Database connection failed");
         }
 
-        // Get simulation tables for the course
+        // Get simulation table names for the course
         const courseResult = await pool.request()
             .input("course_id", courseId)
             .query(`
@@ -48,52 +49,53 @@ export async function GET(req) {
                     simulasyon_table_name_4, simulasyon_table_name_5, simulasyon_table_name_6,
                     simulasyon_table_name_7, simulasyon_table_name_8, simulasyon_table_name_9,
                     simulasyon_table_name_10
-                FROM courses 
+                FROM dbo.courses 
                 WHERE course_id = @course_id
             `);
 
         if (!courseResult.recordset.length) {
-            return new Response(JSON.stringify({ simulations: [] }), {
+            return new Response(JSON.stringify({ simulationDetails: [] }), {
                 status: 200,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
-        // Get valid simulation tables
-        const simulationTables = Object.values(courseResult.recordset[0])
+        // Get valid simulation table names
+        const simulationTableNames = Object.values(courseResult.recordset[0])
             .filter(table => table); // Filter out null/empty values
 
-        if (simulationTables.length === 0) {
-            return new Response(JSON.stringify({ simulations: [] }), {
+        if (simulationTableNames.length === 0) {
+            return new Response(JSON.stringify({ simulationDetails: [] }), {
                 status: 200,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
-        // Get existing tables from database
-        const tablesResult = await pool.request()
-            .query(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`);
-        
-        const existingTables = tablesResult.recordset.map(r => r.TABLE_NAME);
-        const validSimulations = simulationTables.filter(table => existingTables.includes(table));
+        // ✅ Query centralized simulations table
+        const placeholders = simulationTableNames.map((_, index) => `@tableName${index}`).join(', ');
+        const simulationQuery = `
+            SELECT simulasyon_name, simulasyon_showname
+            FROM [dbo].[simulations]
+            WHERE simulasyon_name IN (${placeholders})
+            AND simulasyon_showname IS NOT NULL 
+            AND simulasyon_showname != ''
+            ORDER BY simulasyon_name
+        `;
 
-        // Get simulation details for each valid table
-        const simulationDetails = [];
-        for (const table of validSimulations) {
-            const result = await pool.request()
-                .query(`
-                    SELECT simulasyon_showname 
-                    FROM ${table} 
-                    WHERE simulasyon_showname IS NOT NULL AND simulasyon_showname != ''
-                `);
-            
-            if (result.recordset.length > 0) {
-                simulationDetails.push({
-                    table_name: table,
-                    simulations: result.recordset
-                });
-            }
-        }
+        const request = pool.request();
+        simulationTableNames.forEach((tableName, index) => {
+            request.input(`tableName${index}`, tableName);
+        });
+
+        const simulationResult = await request.query(simulationQuery);
+
+        // ✅ Simplified: Convert directly to expected format
+        const simulationDetails = simulationResult.recordset.map(sim => ({
+            table_name: sim.simulasyon_name,
+            simulations: [{
+                simulasyon_showname: sim.simulasyon_showname
+            }]
+        }));
 
         return new Response(JSON.stringify({ simulationDetails }), {
             status: 200,
@@ -101,7 +103,7 @@ export async function GET(req) {
         });
 
     } catch (error) {
-        
+        console.error("Reports simulations error:", error);
         return new Response(JSON.stringify({ 
             error: "Internal Server Error",
             message: process.env.NODE_ENV === 'development' ? error.message : undefined 

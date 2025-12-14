@@ -1,7 +1,6 @@
-//src/app/giris/page.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function GirisPage() {
@@ -9,7 +8,34 @@ export default function GirisPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidBrowser, setIsValidBrowser] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    function checkSafariBrowser() {
+      // Only run this check on the client side
+      if (typeof window !== 'undefined') {
+        const userAgent = navigator.userAgent;
+        
+        // Check if it's an iOS device (iPhone, iPad, iPod)
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+        
+        // Check if it's NOT Safari (CriOS = Chrome on iOS, FxiOS = Firefox on iOS)
+        const isNotSafari = /CriOS|Chrome|FxiOS|OPiOS|EdgiOS/.test(userAgent);
+        
+        if (isIOS && isNotSafari) {
+          // Set state
+          setIsValidBrowser(false);
+          
+          // Show alert
+          alert("Bu uygulamayı kullanmak için lütfen Safari tarayıcısını kullanın.");
+               
+        }
+      }
+    }
+
+    checkSafariBrowser();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,32 +43,37 @@ export default function GirisPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({
-          id: data.id,
-          firstname: data.firstname,
-          lastname: data.lastname,
-          companyid: data.companyid,
-        }));
-        router.push('/panel'); // Redirect after login
-      } else {
-        throw new Error(data.error || 'Giriş başarısız');
-      }
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.removeItem('user'); // Clear previous user data
+            localStorage.setItem('user', JSON.stringify({
+                id: data.id,
+                firstname: data.firstname,
+                lastname: data.lastname,
+                companyid: data.companyid,
+            }));
+
+            window.dispatchEvent(new Event("storage")); // Force update across tabs
+
+            router.push('/panel'); // Redirect after login
+        } else {
+            throw new Error(data.error || 'Giriş başarısız');
+        }
     } catch (err) {
-      setError(err.message);
+        setError(err.message);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
+
 
   return (
     <div 
@@ -59,7 +90,6 @@ export default function GirisPage() {
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'contain'
       }}
-      
     >
       <div 
         style={{
@@ -125,16 +155,17 @@ export default function GirisPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !isValidBrowser}
             style={{
               backgroundColor: '#24475a',
               color: 'white',
               padding: '12px 20px',
               borderRadius: '8px',
-              cursor: 'pointer',
+              cursor: isValidBrowser ? 'pointer' : 'not-allowed',
               width: '100%',
               fontSize: '16px',
-              fontWeight: '500'
+              fontWeight: '500',
+              opacity: isValidBrowser ? 1 : 0.5
             }}
           >
             {isLoading ? 'Giriş yapılıyor...' : 'Giriş'}
@@ -146,20 +177,21 @@ export default function GirisPage() {
         </form>
       </div>
       <footer style={{
-  textAlign: 'center',
-  padding: '4px',
-  backgroundColor: 'rgba(234, 234, 233, 0.939)',
-  position: 'fixed',
-  bottom: 0,
-  width: '100%',
-  fontSize: '0.8em',
- color: 'black'
-}}>
-  © 2025 Tüm hakları SimulAI Teknoloji şirketine aittir.
-</footer>
-
-
+       textAlign: 'center',
+       padding: '12px',  /* General padding */
+       paddingBottom: '10px', /* Moves text 10px up */
+       backgroundColor: 'rgba(234, 234, 233, 0.939)',
+       position: 'fixed',
+       bottom: '0', /* Ensures footer sticks to bottom */
+       left: '0',
+       width: '100%',
+       height: 'auto',
+       minHeight: '50px',
+       fontSize: '1em',
+       color: 'black'
+      }}>
+        © 2025 Tüm hakları SimulAI Teknoloji şirketine aittir.
+      </footer>
     </div>
-    
   );
 }

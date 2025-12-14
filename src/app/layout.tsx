@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,13 +29,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-y-auto`}
       >
-        <AuthProvider> {/* Wrap everything inside AuthProvider */}
+        <AuthProvider>
           {children}
         </AuthProvider>
       </body>
     </html>
   );
 }
+
 

@@ -101,9 +101,14 @@ async function fetchSimulationResults(pool, userId, courseId, simulationName) {
                 key3, puan3,
                 key4, puan4,
                 key5, puan5,
+                key6, puan6,
+                key7, puan7,
+                key8, puan8,
+                key9, puan9,
+                key10, puan10,
                 toplam_puan,
                 created_at
-            FROM keyzpage_score
+            FROM dbo.keyzpage_score
             WHERE user_id = @user_id 
                 AND course_id = @course_id 
                 AND simulasyon_name = @simulasyon_name
@@ -116,18 +121,16 @@ async function fetchSimulationResults(pool, userId, courseId, simulationName) {
 function formatResults(records) {
     const threadGroups = {};
     const endingPhrase = "Eğitim simülasyonumuz burada bitti";
-    
-    console.log('Raw records before processing:', records); // Add this debug log
 
     // Group by thread_id
     records.forEach(row => {
-       
-        
         if (!threadGroups[row.thread_id]) {
             threadGroups[row.thread_id] = {
+                thread_id: row.thread_id,
                 deneme_number: Object.keys(threadGroups).length + 1,
                 data: [],
-                scores: []
+                scores: [],
+                toplam_puan: null
             };
         }
 
@@ -141,7 +144,7 @@ function formatResults(records) {
         });
 
         // Add score data if present
-        if (row.key1 || row.key2 || row.key3 || row.key4 || row.key5) {
+        if (row.key1 || row.key2 || row.key3 || row.key4 || row.key5 || row.key6 || row.key7 || row.key8 || row.key9 || row.key10 ) {
             threadGroups[row.thread_id].scores.push({
                 key1: row.key1,
                 puan1: row.puan1,
@@ -153,8 +156,21 @@ function formatResults(records) {
                 puan4: row.puan4,
                 key5: row.key5,
                 puan5: row.puan5,
+                key6: row.key6,
+                puan6: row.puan6,
+                key7: row.key7,
+                puan7: row.puan7,
+                key8: row.key8,
+                puan8: row.puan8,
+                key9: row.key9,
+                puan9: row.puan9,
+                key10: row.key10,
+                puan10: row.puan10,
                 toplam_puan: row.toplam_puan
             });
+            if (row.toplam_puan !== undefined && row.toplam_puan !== null) {
+                threadGroups[row.thread_id].toplam_puan = row.toplam_puan;
+            }
         }
     });
 
@@ -175,8 +191,15 @@ function formatResults(records) {
                 lastItem.end_time = lastItem.created_at;
             }
         }
+
+        const start_time = thread.data.length ? thread.data[0].created_at : null;
+        const end_time = thread.data.length ? thread.data[thread.data.length - 1].end_time : null;
         
-        return thread;
+        return {
+            ...thread,
+            start_time,
+            end_time
+        };
     });
 
   

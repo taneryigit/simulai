@@ -27,7 +27,7 @@ export async function GET(req) {
       .input("userId", userId)
       .query(`
         SELECT u.firstname, u.lastname, u.email, c.company_logo
-        FROM [user] u
+        FROM [users] u
         JOIN [companyinfo] c ON u.companyid = c.companyid
         WHERE u.id = @userId
       `);

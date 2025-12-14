@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-
+import Image from "next/image";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -47,21 +47,23 @@ export default function ResetPasswordPage() {
       }
   
       setMessage(data.message);
-    } catch  {
-     
+    } catch (error) {
       setMessage(error.message || 'Bir hata oluştu, lütfen tekrar deneyin.');
-    } finally {
+   }
+   
+     finally {
       setLoading(false);
     }
   };
   
   
+  
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <Card className="w-full max-w-md shadow-lg bg-white">
         <CardHeader>
-          <CardTitle className="text-center text-lg font-bold"> Şifre Al</CardTitle>
+          <CardTitle className="text-center text-lg font-bold"> SimulAI Şifre Al</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 text-center mb-4">
@@ -88,7 +90,15 @@ export default function ResetPasswordPage() {
       <div className="text-center mt-4">
         <a href="/giris" className="text-blue-600 hover:underline text-sm">Giriş Sayfasına Dön</a>
       </div>
-    </div>
-  );
+   
+    {/* Background Logos at the Bottom */}
+    <div className="absolute bottom-4 left-4">
+    <Image src="/images/background/logoleft.png" alt="Left Logo" className="w-32 opacity-50" />
+  </div>
+  <div className="absolute bottom-4 right-4">
+    <Image src="/images/background/logoright.png" alt="Right Logo" className="w-32 opacity-50" />
+  </div>
+</div>
+);
 }
 

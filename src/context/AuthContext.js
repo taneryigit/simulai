@@ -9,20 +9,27 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const decoded = jwtDecode.decode(token);
-                setUser(decoded);
-            } catch  {
-               
-                localStorage.removeItem('token');
+        const loadUserFromStorage = () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const decoded = jwtDecode.decode(token);
+                    setUser(decoded);
+                } catch {
+                    localStorage.removeItem('token');
+                }
             }
-        }
+        };
+
+        loadUserFromStorage();
+
+        window.addEventListener('storage', loadUserFromStorage);
+        return () => window.removeEventListener('storage', loadUserFromStorage);
     }, []);
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');  // Ensure previous user data is cleared
         setUser(null);
     };
 

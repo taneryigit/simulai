@@ -35,7 +35,7 @@ export async function GET(req) {
             .input("user_id", userId)
             .query(`
                 SELECT course_id, course_name 
-                FROM enrol 
+                FROM dbo.enrol 
                 WHERE user_id = @user_id
             `);
         

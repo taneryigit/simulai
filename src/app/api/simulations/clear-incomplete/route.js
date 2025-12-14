@@ -20,7 +20,7 @@ export async function POST(req) {
 
         await pool.request()
             .input("user_id", sql.Int, userId)
-            .query("DELETE FROM keyzpage_complete WHERE user_id = @user_id");
+            .query("DELETE FROM dbo.keyzpage_complete WHERE user_id = @user_id");
 
         return NextResponse.json({ success: true, message: "clear-incomplete" });
     } catch {
